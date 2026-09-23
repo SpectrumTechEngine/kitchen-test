@@ -512,6 +512,7 @@
       gyroActive: false,
       deviceGamma: 0, // Left-Right tilt in degrees (-90 to +90)
       gyroListening: false,
+      orientationWorks: false,
       gammaOffset: 0,   // The angle the player holds the phone at counts as "level"
       mode: 'desktop',  // 'tilt', 'tap' or 'desktop'
       hasStarted: false,
@@ -637,18 +638,33 @@
         const startListening = () => {
           if (!this.gyroListening) {
             this.gyroListening = true;
+            // Best source: the phone's own tilt angle
             window.addEventListener('deviceorientation', (event) => {
               if (typeof event.gamma === 'number') {
+                this.orientationWorks = true;
                 this.gyroActive = true;
                 this.deviceGamma = event.gamma;
               }
+            });
+            // Backup source: work the angle out from the basic motion sensor
+            // (the one that rotates the screen). Many cheaper phones only have this.
+            const isIOS = typeof DeviceOrientationEvent.requestPermission === 'function';
+            window.addEventListener('devicemotion', (event) => {
+              if (this.orientationWorks) return;
+              const g = event.accelerationIncludingGravity;
+              if (!g || typeof g.x !== 'number' || typeof g.z !== 'number') return;
+              let angle = Math.atan2(-g.x, g.z) * 180 / Math.PI;
+              if (isIOS) angle = -angle; // iPhones report the opposite direction
+              angle = Math.max(-90, Math.min(90, angle));
+              this.gyroActive = true;
+              this.deviceGamma += (angle - this.deviceGamma) * 0.25; // smooth out jitter
             });
           }
           // If no tilt readings arrive, switch to tap so the game still works
           clearTimeout(this.gyroCheckTimer);
           this.gyroCheckTimer = setTimeout(() => {
             if (this.mode === 'tilt' && !this.gyroActive) {
-              fallBack("Couldn't read your phone's tilt sensor, so tap controls are on instead.");
+              fallBack("Couldn't read your phone's tilt sensor, so tap controls are on. On Android, check Chrome's Site settings and allow Motion sensors.");
             }
           }, 2500);
         };
