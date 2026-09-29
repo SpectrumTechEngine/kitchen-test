@@ -413,7 +413,7 @@
           <p id="share-reason" class="text-[10px] text-slate-500 mt-2"></p>
         </div>
         <button id="save-cert-btn" class="w-full py-2.5 rounded-xl font-bold bg-slate-700 active:bg-slate-600 text-slate-100">Save certificate 📥</button>
-        <button id="win-restart-btn" class="w-full py-2.5 rounded-xl font-bold bg-emerald-700 active:bg-emerald-600 text-white">Brew another cup ☕</button>
+        <button id="win-restart-btn" class="w-full mt-4 py-2.5 rounded-xl font-bold bg-transparent border border-slate-500 active:bg-slate-800 text-slate-300 text-sm">Brew another cup ☕</button>
       </div>
     </div>
   </div>
@@ -835,7 +835,8 @@
           AudioEngine.init();
           if (e.code === 'Space') {
             e.preventDefault();
-            if (!document.getElementById('fail-modal').classList.contains('hidden') || !document.getElementById('win-modal').classList.contains('hidden')) {
+            if (!document.getElementById('win-modal').classList.contains('hidden')) return; // never throw away a win by accident
+            if (!document.getElementById('fail-modal').classList.contains('hidden')) {
               this.restartGame();
               return;
             }
@@ -880,7 +881,7 @@
         document.getElementById('step-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); AudioEngine.init(); this.takeStep(); });
 
         document.getElementById('retry-btn').addEventListener('click', () => { this.restartGame(); });
-        document.getElementById('win-restart-btn').addEventListener('click', () => { this.restartGame(); });
+        document.getElementById('win-restart-btn').addEventListener('click', () => { this.winRestartTap(); });
         document.getElementById('share-whatsapp-btn').addEventListener('click', () => this.shareCertificate());
         document.getElementById('save-cert-btn').addEventListener('click', () => this.saveCertificate());
         document.getElementById('open-whatsapp-btn').addEventListener('click', () => {
@@ -1447,8 +1448,32 @@
         modal.classList.remove('hidden');
         modal.scrollTop = 0;
         document.getElementById('share-help').classList.add('hidden');
+        // Players are tapping fast when they win: ignore taps for a moment so one can't land on a button
+        modal.style.pointerEvents = 'none';
+        clearTimeout(this.winGuardTimer);
+        this.winGuardTimer = setTimeout(() => { modal.style.pointerEvents = ''; }, 1500);
+        this.certShared = false;
+        this.disarmRestart();
         this.startConfetti();
         this.renderCertificate();
+      },
+
+      // "Brew another cup" asks for a second tap until the certificate has been shared or saved
+      winRestartTap() {
+        if (this.certShared || this.restartArmed) { this.disarmRestart(); this.restartGame(); return; }
+        this.restartArmed = true;
+        const btn = document.getElementById('win-restart-btn');
+        btn.innerText = "Tap again to start over (you'll lose this certificate)";
+        btn.classList.add('border-rose-400', 'text-rose-300');
+        this.restartArmTimer = setTimeout(() => this.disarmRestart(), 4000);
+      },
+
+      disarmRestart() {
+        this.restartArmed = false;
+        clearTimeout(this.restartArmTimer);
+        const btn = document.getElementById('win-restart-btn');
+        btn.innerText = 'Brew another cup ☕';
+        btn.classList.remove('border-rose-400', 'text-rose-300');
       },
 
       /* ---------- Celebration & certificate ---------- */
@@ -1595,6 +1620,8 @@
       },
 
       shareCertificate() {
+        this.certShared = true;
+        this.disarmRestart();
         const text = this.shareText();
         const preview = document.getElementById('cert-preview').src;
         const blob = this.certBlob || (preview ? this.dataUrlToBlob(preview) : null);
@@ -1623,6 +1650,8 @@
 
       saveCertificate() {
         if (!this.certBlob) return;
+        this.certShared = true;
+        this.disarmRestart();
         const link = document.createElement('a');
         link.href = URL.createObjectURL(this.certBlob);
         link.download = 'kitchen-test-certificate.png';
