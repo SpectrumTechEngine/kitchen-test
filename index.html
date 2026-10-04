@@ -12,6 +12,8 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' fill='%230f172a'/%3E%3Ctext x='64' y='86' text-anchor='middle' font-size='76'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
   <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22The%20Kitchen%20Test%22%2C%22short_name%22%3A%22The%20Kitchen%20Test%22%2C%22display%22%3A%22standalone%22%2C%22theme_color%22%3A%22%23020617%22%2C%22background_color%22%3A%22%230f172a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2527%2520viewBox%253D%25270%25200%2520128%2520128%2527%253E%253Crect%2520width%253D%2527128%2527%2520height%253D%2527128%2527%2520rx%253D%252724%2527%2520fill%253D%2527%25230f172a%2527%252F%253E%253Ctext%2520x%253D%252764%2527%2520y%253D%252786%2527%2520text-anchor%253D%2527middle%2527%2520font-size%253D%252776%2527%253E%25E2%2598%2595%253C%252Ftext%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22128x128%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Usage numbers and owner tools, shared by every Spectrum Tech Engine app -->
+  <script src="https://thespectrumtechengine.com/ste-owner.js" data-app="kitchen-test" defer></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Press+Start+2P&display=swap');
     
@@ -644,7 +646,7 @@
           if (mode === 'tilt') this.enableTilt(); else this.setMode('tap');
           const modalOpen = !document.getElementById('fail-modal').classList.contains('hidden') ||
                             !document.getElementById('win-modal').classList.contains('hidden');
-          if (!this.hasStarted) { this.hasStarted = true; this.startStage(1); }
+          if (!this.hasStarted) { this.hasStarted = true; this.startStage(1); ste('track', 'play'); ste('detail', 'controls-' + mode); }
           else if (!modalOpen) this.startStage(this.stage); // restart the paused stage
         };
         document.getElementById('choose-tilt-btn').addEventListener('click', () => begin('tilt'));
@@ -1428,6 +1430,7 @@
         document.getElementById('main-container').classList.remove('stress-pulse');
         AudioEngine.playFail();
 
+        ste('detail', 'failed-' + title); ste('value', 'stage-reached', this.stage);
         document.getElementById('fail-title').innerText = title;
         document.getElementById('fail-reason').innerText = reason;
         document.getElementById('fail-modal').classList.remove('hidden');
@@ -1442,6 +1445,7 @@
         AudioEngine.playFanfare();
         if (navigator.vibrate) { try { navigator.vibrate([80, 60, 80, 60, 250]); } catch (e) {} }
 
+        ste('detail', 'won'); ste('value', 'attempts-to-win', this.attempts);
         document.getElementById('stat-attempts').innerText = this.attempts;
         document.getElementById('stat-rank').innerText = this.rankFor(this.attempts);
         const modal = document.getElementById('win-modal');
@@ -1620,6 +1624,7 @@
       },
 
       shareCertificate() {
+        ste('track', 'share');
         this.certShared = true;
         this.disarmRestart();
         const text = this.shareText();
@@ -1649,6 +1654,7 @@
       },
 
       saveCertificate() {
+        ste('detail', 'certificate-saved');
         if (!this.certBlob) return;
         this.certShared = true;
         this.disarmRestart();
@@ -1662,12 +1668,16 @@
 
       restartGame() {
         this.attempts++;
+        ste('track', 'play');
         document.getElementById('attempt-counter').innerText = this.attempts;
         document.getElementById('fail-modal').classList.add('hidden');
         document.getElementById('win-modal').classList.add('hidden');
         this.startStage(1);
       }
     };
+
+    // Usage numbers for the owner (ste-owner.js on the website); never gets in the way of the game
+    function ste(f, ...a) { try { if (window.STE && window.STE[f]) window.STE[f](...a); } catch (e) {} }
 
     window.onload = () => {
       Game.init();
