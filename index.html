@@ -44,6 +44,31 @@
       .stage-view button.py-4 { padding-top: 0.8rem; padding-bottom: 0.8rem; }
     }
 
+    /* Laptops and other wide-but-short screens: tighter header and spacing so each stage fits without scrolling */
+    @media (min-width: 640px) and (max-height: 820px) {
+      #main-container > div:first-child { padding-top: .3rem; padding-bottom: 0; }
+      #main-container > div:first-child img { height: 2rem; }
+      #main-container > div:nth-child(2) { padding-top: .35rem; padding-bottom: .35rem; }
+      #main-container h1 { font-size: 1.25rem; }
+      #attempt-counter { font-size: 1.25rem; line-height: 1.5rem; }
+      #main-container > div:nth-child(4) { padding-top: .35rem; padding-bottom: .35rem; }
+      #stage-scroll { padding-top: .5rem; padding-bottom: .5rem; }
+      .stage-view { gap: .6rem !important; }
+      .stage-view button.py-4 { padding-top: .7rem; padding-bottom: .7rem; }
+      :root { --reserve: 520px; }
+    }
+    /* very short laptop screens: smaller pictures and headings too */
+    @media (min-width: 640px) and (max-height: 660px) {
+      #main-container > div:nth-child(2) p { display: none; }
+      .stage-view h2 { font-size: 1rem; line-height: 1.3rem; }
+      .stage-view { gap: .45rem !important; }
+      .stage-view button.py-4 { padding-top: .55rem; padding-bottom: .55rem; }
+      :root { --reserve: 575px; }
+      .canvas-frame { width: min(100%, clamp(135px, calc((100dvh - var(--reserve)) * 0.857), 360px)); }
+      #stage-1 > div:nth-child(2), #sugar-stage { height: 11rem !important; }
+      #sugar-equation { font-size: 2.6rem; line-height: 1; }
+    }
+
     /* Hide keyboard hints on touch screens */
     @media (pointer: coarse) { .kbd-hint { display: none !important; } }
 
