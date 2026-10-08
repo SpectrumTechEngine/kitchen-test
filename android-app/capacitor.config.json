@@ -1,0 +1,10 @@
+{
+  "appId": "com.thespectrumtechengine.kitchentest",
+  "appName": "Kitchen Test",
+  "webDir": "www",
+  "backgroundColor": "#0f0c29",
+  "server": {
+    "url": "https://thespectrumtechengine.com/kitchen-test/",
+    "errorPath": "index.html"
+  }
+}
